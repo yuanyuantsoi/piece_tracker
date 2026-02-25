@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../data/sqlite_db.dart';
 import '../repos/entry_repo.dart';
-import '../models/date_key.dart';
+import '../repos/export_service.dart';
 import '../repos/worker_repo.dart';
+import '../models/date_key.dart';
 import '../models/worker_type.dart';
 
 class CalendarPage extends StatelessWidget {
@@ -64,38 +65,103 @@ Future<String> _workerRepoSelfCheck() async {
   return 'ids=[$id1,$id2] all=${all.length} active(before)=${active1.length} active(after)=${active2.length}';
 }
 
+Future<String> _exportSelfCheck() async {
+  final db = await SqliteDb.open();
+  final workerRepo = WorkerRepo(db);
+  final entryRepo = EntryRepo(db);
+  final exportService = ExportService(db);
+
+  // 调试自检：清空（仅开发阶段）
+  await db.delete('piece_entries');
+  await db.delete('workers');
+
+  final w1 = await workerRepo.addWorker('张三', WorkerType.sewing);
+  final w2 = await workerRepo.addWorker('李四', WorkerType.ironing);
+
+  final todayKey = DateKey.fromDate(DateTime.now());
+  final yesterdayKey = DateKey.fromDate(DateTime.now().subtract(const Duration(days: 1)));
+
+  await entryRepo.setCount(yesterdayKey, w1, 10);
+  await entryRepo.setCount(yesterdayKey, w2, 20);
+  await entryRepo.setCount(todayKey, w1, 30);
+
+  final range = DateKey.monthRange(DateTime.now());
+  final rows = await exportService.queryRows(range.startKey, range.endKey);
+  final csv = exportService.buildCsv(rows);
+
+  // 只展示前 N 行，避免弹窗太长
+  final lines = csv.split('\n');
+  final preview = lines.take(8).join('\n');
+  return 'rows=${rows.length}\n$preview';
+}
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('计件助手')),
-      body: Center(
-        child: ElevatedButton(
-//--------------------------------------------------
-onPressed: () async {
-  try {
-    final msg = await _workerRepoSelfCheck();
-    if (!context.mounted) return;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('WorkerRepo 自检结果'),
-        content: Text(msg),
+      //-------------
+           body: Center(
+  child: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      ElevatedButton(
+        onPressed: () async {
+          try {
+            final msg = await _dbSelfCheck();
+            if (!context.mounted) return;
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('DB 自检结果'),
+                content: Text(msg),
+              ),
+            );
+          } catch (e) {
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('DB 错误'),
+                content: Text(e.toString()),
+              ),
+            );
+          }
+        },
+        child: const Text('DB 自检'),
       ),
-    );
-  } catch (e) {
-    if (!context.mounted) return;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('WorkerRepo 自检失败'),
-        content: Text(e.toString()),
+
+      const SizedBox(height: 16),
+
+      ElevatedButton(
+        onPressed: () async {
+          try {
+            final msg = await _exportSelfCheck();
+            if (!context.mounted) return;
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Export 自检结果'),
+                content: SingleChildScrollView(child: Text(msg)),
+              ),
+            );
+          } catch (e) {
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text('Export 自检失败'),
+                content: Text(e.toString()),
+              ),
+            );
+          }
+        },
+        child: const Text('Export 自检'),
       ),
-    );
-  }
-},
-          child: const Text('DB 自检'),
-        ),
-      ),
+    ],
+  ),
+),
+
+      //-------------
+
+
     );
   }
 }
