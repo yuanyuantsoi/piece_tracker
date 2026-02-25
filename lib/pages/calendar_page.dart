@@ -6,6 +6,8 @@ import '../repos/worker_repo.dart';
 import '../models/date_key.dart';
 import '../models/worker_type.dart';
 
+import 'worker_manage_page.dart';
+
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key});
 
@@ -98,7 +100,25 @@ Future<String> _exportSelfCheck() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('计件助手')),
+      //------------------
+
+appBar: AppBar(
+  title: const Text('计件助手'),
+  actions: [
+    IconButton(
+      icon: const Icon(Icons.people),
+      onPressed: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const WorkerManagePage(),
+          ),
+        );
+      },
+    ),
+  ],
+),
+
+      //------------------
       //-------------
            body: Center(
   child: Column(
