@@ -13,6 +13,7 @@ extension WorkerTypeDb on WorkerType {
     }
   }
 
+  /// 中文展示名
   String get label {
     switch (this) {
       case WorkerType.sewing:
@@ -29,7 +30,6 @@ extension WorkerTypeDb on WorkerType {
       case 1:
         return WorkerType.ironing;
       default:
-        // v1.0.1：遇到脏数据直接兜底为 sewing，避免 UI 崩
         return WorkerType.sewing;
     }
   }

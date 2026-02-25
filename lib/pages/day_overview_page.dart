@@ -42,35 +42,54 @@ class DayOverviewPage extends ConsumerWidget {
             ...inactiveWithRecord,
           ];
 
-          // 按工种分组（制衣/熨衣）
-          final sewing = display.where((w) => w.type == WorkerType.sewing).toList();
-          final ironing = display.where((w) => w.type == WorkerType.ironing).toList();
+          // 合计：仅统计 display 集合（和 UI 展示一致）
+          final total = display.fold<int>(
+            0,
+            (sum, w) => sum + (countsMap[w.id] ?? 0),
+          );
 
-          return ListView(
+          // 按工种分组（制衣/熨衣）
+          final sewing =
+              display.where((w) => w.type == WorkerType.sewing).toList();
+          final ironing =
+              display.where((w) => w.type == WorkerType.ironing).toList();
+
+          return Stack(
             children: [
-              _Section(
-                title: WorkerType.sewing.label,
-                workers: sewing,
-                countsMap: countsMap,
-                onTapWorker: (w) => _openEdit(
-                  context,
-                  dateKey: dateKey,
-                  initialWorkerId: w.id,
-                  orderedWorkerIds: display.map((e) => e.id).toList(), // 按 id asc 的链
-                ),
+              ListView(
+                padding: const EdgeInsets.only(bottom: 88), // 给底部合计栏留空间
+                children: [
+                  _Section(
+                    title: WorkerType.sewing.label,
+                    workers: sewing,
+                    countsMap: countsMap,
+                    onTapWorker: (w) => _openEdit(
+                      context,
+                      dateKey: dateKey,
+                      initialWorkerId: w.id,
+                      orderedWorkerIds:
+                          display.map((e) => e.id).toList(), // 按 id asc 的链
+                    ),
+                  ),
+                  _Section(
+                    title: WorkerType.ironing.label,
+                    workers: ironing,
+                    countsMap: countsMap,
+                    onTapWorker: (w) => _openEdit(
+                      context,
+                      dateKey: dateKey,
+                      initialWorkerId: w.id,
+                      orderedWorkerIds: display.map((e) => e.id).toList(),
+                    ),
+                  ),
+                ],
               ),
-              _Section(
-                title: WorkerType.ironing.label,
-                workers: ironing,
-                countsMap: countsMap,
-                onTapWorker: (w) => _openEdit(
-                  context,
-                  dateKey: dateKey,
-                  initialWorkerId: w.id,
-                  orderedWorkerIds: display.map((e) => e.id).toList(),
-                ),
+
+              // 底部合计栏
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: _TotalBar(total: total),
               ),
-              const SizedBox(height: 80),
             ],
           );
         },
@@ -173,6 +192,40 @@ class _Section extends StatelessWidget {
           );
         }),
       ],
+    );
+  }
+}
+
+class _TotalBar extends StatelessWidget {
+  const _TotalBar({required this.total});
+
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 8,
+      child: SafeArea(
+        top: false,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '合计',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+              Text(
+                '$total',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
