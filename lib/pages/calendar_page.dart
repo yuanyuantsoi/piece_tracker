@@ -28,25 +28,35 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       MaterialPageRoute(builder: (_) => DayOverviewPage(dateKey: key)),
     );
   }
+//--------------------------------------------------------------------
+Future<void> _exportMonth() async {
+  final service = ref.read(exportServiceProvider);
+  final range = DateKey.monthRange(_focusedDay);
 
-  Future<void> _exportMonth() async {
-    final service = ref.read(exportServiceProvider);
-    final range = DateKey.monthRange(_focusedDay);
-    final rows = await service.queryRows(range.startKey, range.endKey);
-    final csv = service.buildCsv(rows);
-    if (!mounted) return;
-    _showTextDialog('导出本月（预览）', 'rows=${rows.length}\n\n$csv');
-  }
+  final path = await service.exportCsvToFile(
+    startKey: range.startKey,
+    endKey: range.endKey,
+    fileName: 'piece_month_${range.startKey}_${range.endKey}.csv',
+  );
 
-  Future<void> _exportYear() async {
-    final service = ref.read(exportServiceProvider);
-    final range = DateKey.yearRange(_focusedDay.year);
-    final rows = await service.queryRows(range.startKey, range.endKey);
-    final csv = service.buildCsv(rows);
-    if (!mounted) return;
-    _showTextDialog('导出本年（预览）', 'rows=${rows.length}\n\n$csv');
-  }
+  if (!mounted) return;
+  _showTextDialog('导出完成', '已保存到：\n$path');
+}
 
+Future<void> _exportYear() async {
+  final service = ref.read(exportServiceProvider);
+  final range = DateKey.yearRange(_focusedDay.year);
+
+  final path = await service.exportCsvToFile(
+    startKey: range.startKey,
+    endKey: range.endKey,
+    fileName: 'piece_year_${range.startKey}_${range.endKey}.csv',
+  );
+
+  if (!mounted) return;
+  _showTextDialog('导出完成', '已保存到：\n$path');
+}
+//----------------------------------------------------------
   void _showTextDialog(String title, String content) {
     showDialog(
       context: context,

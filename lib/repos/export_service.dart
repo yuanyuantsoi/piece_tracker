@@ -1,4 +1,7 @@
 // lib/repos/export_service.dart
+import 'dart:io';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:sqflite/sqflite.dart';
 import '../models/export_row.dart';
@@ -62,6 +65,39 @@ ORDER BY e.date_key ASC, w.id ASC;
     }
     return b.toString();
   }
+
+  //--------------------------
+  /// 真正落盘导出：写入 App 文档目录，返回文件绝对路径
+  /// - 默认加 UTF-8 BOM，Excel 打开中文更稳
+  Future<String> exportCsvToFile({
+    required int startKey,
+    required int endKey,
+    String? fileName, // 可自定义
+    bool withBom = true,
+  }) async {
+    final rows = await queryRows(startKey, endKey);
+    final csv = buildCsv(rows);
+
+    final dir = await getApplicationDocumentsDirectory();
+
+    final safeName = (fileName == null || fileName.trim().isEmpty)
+        ? 'piece_${startKey}_to_${endKey}.csv'
+        : fileName.trim();
+
+    final path = '${dir.path}/$safeName';
+    final f = File(path);
+
+    if (withBom) {
+      // UTF-8 BOM: EF BB BF
+      final bytes = <int>[0xEF, 0xBB, 0xBF, ...utf8.encode(csv)];
+      await f.writeAsBytes(bytes, flush: true);
+    } else {
+      await f.writeAsString(csv, encoding: utf8, flush: true);
+    }
+
+    return path;
+  }
+  //---------------------------
 
   /// 简单 CSV 转义：包含逗号/引号/换行时加双引号，并把内部引号变成 ""。
   String _csvEscape(String s) {
