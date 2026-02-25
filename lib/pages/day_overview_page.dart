@@ -204,51 +204,27 @@ class _Section extends StatelessWidget {
         Container(height: 0.6, color: dividerColor),
 
         // ===== 内容区 =====
-        Container(
-          color: Colors.white,
-          child: ListView.separated(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: workers.length,
-            separatorBuilder: (_, __) => Container(
-              height: 0.6,
-              color: dividerColor,
-              margin: const EdgeInsets.only(left: 16),
-            ),
-            //-------------------------------
-            itemBuilder: (context, i) {
-              final w = workers[i];
-              final count = countsMap[w.id] ?? 0;
-
-              return ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                visualDensity: const VisualDensity(vertical: 0), // ✅ 更高
-                title: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        w.name,
-                        style: const TextStyle(
-                          fontSize: 18, // ✅ 和数字一样大
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '$count',
-                      style: const TextStyle(
-                        fontSize: 18, // ✅ 同级
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                onTap: () => onTapWorker(w),
-              );
-            },
-          ),
+        // ===== 内容区 =====
+Container(
+  color: Colors.white,
+  child: Column(
+    children: [
+      for (int i = 0; i < workers.length; i++) ...[
+        _WorkerTile(
+          w: workers[i],
+          count: countsMap[workers[i].id] ?? 0,
+          onTap: () => onTapWorker(workers[i]),
         ),
+        if (i != workers.length - 1)
+          Container(
+            height: 0.6,
+            color: dividerColor,
+            margin: const EdgeInsets.only(left: 16),
+          ),
+      ],
+    ],
+  ),
+),
       ],
     );
   }
@@ -318,6 +294,42 @@ class _TotalChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+class _WorkerTile extends StatelessWidget {
+  const _WorkerTile({
+    required this.w,
+    required this.count,
+    required this.onTap,
+  });
+
+  final WorkerRow w;
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      visualDensity: const VisualDensity(vertical: 0),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              w.name,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+          ),
+          Text(
+            '$count',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+      onTap: onTap,
     );
   }
 }
