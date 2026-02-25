@@ -1,203 +1,149 @@
+// lib/pages/calendar_page.dart
+
 import 'package:flutter/material.dart';
-import '../data/sqlite_db.dart';
-import '../repos/entry_repo.dart';
-import '../repos/export_service.dart';
-import '../repos/worker_repo.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:table_calendar/table_calendar.dart';
+
 import '../models/date_key.dart';
-import '../models/worker_type.dart';
-
-import 'worker_manage_page.dart';
+import '../state/providers.dart';
 import 'day_overview_page.dart';
+import 'worker_manage_page.dart';
 
-class CalendarPage extends StatelessWidget {
+class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
 
-  Future<String> _dbSelfCheck() async {
-    final db = await SqliteDb.open();
-    final tables = await db.rawQuery(
-      "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;",
+  @override
+  ConsumerState<CalendarPage> createState() => _CalendarPageState();
+}
+
+class _CalendarPageState extends ConsumerState<CalendarPage> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
+  DateTime _normalize(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  void _openDay(DateTime day) {
+    final key = DateKey.fromDate(day);
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => DayOverviewPage(dateKey: key)),
     );
-    final names = tables.map((e) => e['name'] as String).toList();
-    return 'tables: ${names.join(', ')}';
   }
 
-  Future<String> _repoSelfCheck() async {
-  final db = await SqliteDb.open();
-  final repo = EntryRepo(db);
+  Future<void> _exportMonth() async {
+    final service = ref.read(exportServiceProvider);
+    final range = DateKey.monthRange(_focusedDay);
+    final rows = await service.queryRows(range.startKey, range.endKey);
+    final csv = service.buildCsv(rows);
+    if (!mounted) return;
+    _showTextDialog('导出本月（预览）', 'rows=${rows.length}\n\n$csv');
+  }
 
-  final dateKey = DateKey.fromDate(DateTime.now());
+  Future<void> _exportYear() async {
+    final service = ref.read(exportServiceProvider);
+    final range = DateKey.yearRange(_focusedDay.year);
+    final rows = await service.queryRows(range.startKey, range.endKey);
+    final csv = service.buildCsv(rows);
+    if (!mounted) return;
+    _showTextDialog('导出本年（预览）', 'rows=${rows.length}\n\n$csv');
+  }
 
-  // 先确保干净
-  await repo.setCount(dateKey, 1, 0);
-
-  // upsert insert
-  await repo.setCount(dateKey, 1, 12);
-  var m = await repo.getCountsByDate(dateKey);
-  final a = m[1];
-
-  // upsert update
-  await repo.setCount(dateKey, 1, 34);
-  m = await repo.getCountsByDate(dateKey);
-  final b = m[1];
-
-  // delete
-  await repo.setCount(dateKey, 1, 0);
-  m = await repo.getCountsByDate(dateKey);
-  final c = m.containsKey(1);
-
-  return 'insert=$a update=$b deleted=${!c}';
-}
-
-Future<String> _workerRepoSelfCheck() async {
-  final db = await SqliteDb.open();
-  final repo = WorkerRepo(db);
-
-  // 调试自检：清空 workers（只在 v1 开发阶段用）
-  await db.delete('workers');
-
-  final id1 = await repo.addWorker('张三', WorkerType.sewing);
-  final id2 = await repo.addWorker('李四', WorkerType.ironing);
-
-  final all = await repo.listAllByIdAsc();
-  final active1 = await repo.listActiveByIdAsc();
-
-  await repo.setWorkerActive(id2, false);
-
-  final active2 = await repo.listActiveByIdAsc();
-
-  return 'ids=[$id1,$id2] all=${all.length} active(before)=${active1.length} active(after)=${active2.length}';
-}
-
-Future<String> _exportSelfCheck() async {
-  final db = await SqliteDb.open();
-  final workerRepo = WorkerRepo(db);
-  final entryRepo = EntryRepo(db);
-  final exportService = ExportService(db);
-
-  // 调试自检：清空（仅开发阶段）
-  await db.delete('piece_entries');
-  await db.delete('workers');
-
-  final w1 = await workerRepo.addWorker('张三', WorkerType.sewing);
-  final w2 = await workerRepo.addWorker('李四', WorkerType.ironing);
-
-  final todayKey = DateKey.fromDate(DateTime.now());
-  final yesterdayKey = DateKey.fromDate(DateTime.now().subtract(const Duration(days: 1)));
-
-  await entryRepo.setCount(yesterdayKey, w1, 10);
-  await entryRepo.setCount(yesterdayKey, w2, 20);
-  await entryRepo.setCount(todayKey, w1, 30);
-
-  final range = DateKey.monthRange(DateTime.now());
-  final rows = await exportService.queryRows(range.startKey, range.endKey);
-  final csv = exportService.buildCsv(rows);
-
-  // 只展示前 N 行，避免弹窗太长
-  final lines = csv.split('\n');
-  final preview = lines.take(8).join('\n');
-  return 'rows=${rows.length}\n$preview';
-}
+  void _showTextDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(title),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(child: Text(content)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    // 提前触发 DB 打开：避免第一次点导出/进页面时卡住（仍不写业务逻辑）
+    ref.watch(dbProvider);
+
     return Scaffold(
-      //------------------
-
-appBar: AppBar(
-  title: const Text('计件助手'),
-  actions: [
-    IconButton(
-      icon: const Icon(Icons.people),
-      onPressed: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => const WorkerManagePage(),
+      appBar: AppBar(
+        title: const Text('计件助手'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.people),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const WorkerManagePage()),
+              );
+            },
+            tooltip: '工人管理',
           ),
-        );
-      },
-    ),
-  ],
+          PopupMenuButton<_ExportAction>(
+            tooltip: '导出',
+            onSelected: (v) async {
+              if (v == _ExportAction.month) {
+                await _exportMonth();
+              } else {
+                await _exportYear();
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: _ExportAction.month,
+                child: Text('导出本月'),
+              ),
+              PopupMenuItem(
+                value: _ExportAction.year,
+                child: Text('导出本年'),
+              ),
+            ],
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Icon(Icons.upload_file),
+            ),
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: TableCalendar(
+          firstDay: DateTime.utc(2020, 1, 1),
+          lastDay: DateTime.utc(2100, 12, 31),
+          focusedDay: _focusedDay,
+
+            calendarFormat: CalendarFormat.month,
+availableCalendarFormats: const {
+  CalendarFormat.month: 'Month',
+},
+headerStyle: const HeaderStyle(
+  formatButtonVisible: false,
 ),
 
-      //------------------
-      //-------------
-           body: Center(
-  child: Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      ElevatedButton(
-        onPressed: () async {
-          try {
-            final msg = await _dbSelfCheck();
-            if (!context.mounted) return;
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('DB 自检结果'),
-                content: Text(msg),
-              ),
-            );
-          } catch (e) {
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('DB 错误'),
-                content: Text(e.toString()),
-              ),
-            );
-          }
-        },
-        child: const Text('DB 自检'),
+          selectedDayPredicate: (d) =>
+              _selectedDay != null && isSameDay(_selectedDay, d),
+          onDaySelected: (selectedDay, focusedDay) {
+            setState(() {
+              _selectedDay = _normalize(selectedDay);
+              _focusedDay = _normalize(focusedDay);
+            });
+            _openDay(_selectedDay!);
+          },
+          onPageChanged: (focusedDay) {
+            setState(() => _focusedDay = _normalize(focusedDay));
+          },
+          calendarStyle: const CalendarStyle(
+            outsideDaysVisible: false,
+          ),
+        ),
       ),
-
-      const SizedBox(height: 16),
-
-      ElevatedButton(
-        onPressed: () async {
-          try {
-            final msg = await _exportSelfCheck();
-            if (!context.mounted) return;
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('Export 自检结果'),
-                content: SingleChildScrollView(child: Text(msg)),
-              ),
-            );
-          } catch (e) {
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                title: const Text('Export 自检失败'),
-                content: Text(e.toString()),
-              ),
-            );
-          }
-        },
-        child: const Text('Export 自检'),
-      ),
-
-        const SizedBox(height: 16),
-
-ElevatedButton(
-  onPressed: () {
-    final key = DateKey.fromDate(DateTime.now());
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => DayOverviewPage(dateKey: key),
-      ),
-    );
-  },
-  child: const Text('打开今天概览'),
-),
-
-    ],
-  ),
-),
-
-      //-------------
-
-
     );
   }
 }
+
+enum _ExportAction { month, year }
