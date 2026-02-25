@@ -93,12 +93,12 @@ Future<void> _exportYear() async {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('计件助手',
-            style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                fontStyle: FontStyle.normal,
-                ),
+        title: const Text('计件助手'
+           // style: TextStyle(
+           //     fontSize: 12,
+           //     fontWeight: FontWeight.w900,
+           //     fontStyle: FontStyle.normal,
+           //     ),
             ),
         actions: [
           IconButton(

@@ -21,7 +21,7 @@ class DayOverviewPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('当天概览 $dateKey'),
+        title: Text('$dateKey 计件'),
       ),
       body: _TripleAsyncBody(
         activeAsync: activeAsync,

@@ -19,7 +19,19 @@ class App extends StatelessWidget {
       theme: ThemeData(
         colorSchemeSeed: Colors.blue,
         useMaterial3: true,
+        // 全局修改AppBar标题样式
+        appBarTheme: const AppBarTheme(
+        centerTitle: false, // 是否居中
+    titleTextStyle: TextStyle(
+      fontSize: 15,            // 修改字体大小
+      fontWeight: FontWeight.w900, // 加粗
+      fontStyle: FontStyle.normal,
+      color: Colors.black87,    // 颜色
+      letterSpacing: 1.2,       // 字间距
+      // fontFamily: 'YourCustomFont', // 如果你有自定义字体在此设置
       ),
+    ),
+        ),
       home: const CalendarPage(),
     );
   }
