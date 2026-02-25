@@ -1,4 +1,6 @@
 // lib/pages/calendar_page.dart
+import 'package:share_plus/share_plus.dart';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,9 +42,13 @@ Future<void> _exportMonth() async {
   );
 
   if (!mounted) return;
-  _showTextDialog('导出完成', '已保存到：\n$path');
-}
 
+  await Share.shareXFiles(
+    [XFile(path)],
+    text: '计件数据（本月）',
+  );
+}
+//----------------------------------------------------------------
 Future<void> _exportYear() async {
   final service = ref.read(exportServiceProvider);
   final range = DateKey.yearRange(_focusedDay.year);
@@ -54,7 +60,11 @@ Future<void> _exportYear() async {
   );
 
   if (!mounted) return;
-  _showTextDialog('导出完成', '已保存到：\n$path');
+
+  await Share.shareXFiles(
+    [XFile(path)],
+    text: '计件数据（本年）',
+  );
 }
 //----------------------------------------------------------
   void _showTextDialog(String title, String content) {
