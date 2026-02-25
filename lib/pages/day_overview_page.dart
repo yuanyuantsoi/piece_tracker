@@ -57,6 +57,7 @@ class DayOverviewPage extends ConsumerWidget {
           return Stack(
             children: [
               ListView(
+                physics: const ClampingScrollPhysics(), // 去掉弹跳
                 padding: const EdgeInsets.only(bottom: 88), // 给底部合计栏留空间
                 children: [
                   _Section(
@@ -153,6 +154,8 @@ class _TripleAsyncBody extends StatelessWidget {
   }
 }
 
+//--------------------------------------
+
 class _Section extends StatelessWidget {
   const _Section({
     required this.title,
@@ -170,31 +173,84 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     if (workers.isEmpty) return const SizedBox.shrink();
 
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    final dividerColor = Colors.grey.shade300;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        // ===== 现代化标题（浅色块）=====
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          decoration: BoxDecoration(
+            color: primary.withOpacity(0.08), // ✅ 很浅的主色
+          ),
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: primary, // 主色文字
+            ),
           ),
         ),
-        ...workers.map((w) {
-          final count = countsMap[w.id] ?? 0;
-          return ListTile(
-            title: Text(w.name),
-            trailing: Text(
-              '$count',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+
+        Container(height: 0.6, color: dividerColor),
+
+        // ===== 内容区 =====
+        Container(
+          color: Colors.white,
+          child: ListView.separated(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: workers.length,
+            separatorBuilder: (_, __) => Container(
+              height: 0.6,
+              color: dividerColor,
+              margin: const EdgeInsets.only(left: 16),
             ),
-            onTap: () => onTapWorker(w),
-          );
-        }),
+            //-------------------------------
+            itemBuilder: (context, i) {
+              final w = workers[i];
+              final count = countsMap[w.id] ?? 0;
+
+              return ListTile(
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                visualDensity: const VisualDensity(vertical: 0), // ✅ 更高
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        w.name,
+                        style: const TextStyle(
+                          fontSize: 18, // ✅ 和数字一样大
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '$count',
+                      style: const TextStyle(
+                        fontSize: 18, // ✅ 同级
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                onTap: () => onTapWorker(w),
+              );
+            },
+          ),
+        ),
       ],
     );
   }
 }
+
+//--------------
 
 class _TotalBar extends StatelessWidget {
   const _TotalBar({required this.total});
