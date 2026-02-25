@@ -27,6 +27,7 @@ class WorkerManagePage extends ConsumerWidget {
             return const Center(child: Text('暂无工人'));
           }
           return ListView.separated(
+                  physics: const ClampingScrollPhysics(),
             itemCount: workers.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {

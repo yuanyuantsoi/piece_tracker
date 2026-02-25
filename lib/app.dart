@@ -11,6 +11,11 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: '计件助手',
       debugShowCheckedModeBanner: false,
+
+         scrollBehavior: const ScrollBehavior().copyWith(
+        overscroll: false, // 禁用 Android 12+ 的 Stretch 和旧版的 Glow
+      ),
+
       theme: ThemeData(
         colorSchemeSeed: Colors.blue,
         useMaterial3: true,
