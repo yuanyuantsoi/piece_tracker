@@ -62,7 +62,7 @@ class _PieceEditPageState extends ConsumerState<PieceEditPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('录入 ${widget.dateKey}'),
+        title: Text('${widget.dateKey} 录入'),
       ),
       body: allWorkersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -119,42 +119,50 @@ class _PieceEditPageState extends ConsumerState<PieceEditPage> {
 
                     const SizedBox(height: 12),
 
-                    _Keypad(
-                      onDigit: _append,
-                      onClear: _clear,
-                      onBackspace: _backspace,
-                    ),
-
-                    const Spacer(),
-
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _isFirst ? null : () => _goPrev(context),
-                              child: const Text('上一个'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _isLast ? null : () => _goNextSkip(context),
-                              child: const Text('下一个（跳过）'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton(
-                              onPressed: () => _saveAndNext(context),
-                              child: Text(_isLast ? '保存并返回' : '保存并下一个'),
-                            ),
-                          ),
-                        ],
+                        // ✅ 键盘占据中间剩余空间（更大）
+                    Expanded(
+                           // flex: 20, //键盘高度权重
+                      child: _Keypad(
+                        onDigit: _append,
+                        onClear: _clear,
+                        onBackspace: _backspace,
                       ),
                     ),
+
+                    // ✅ 底部按钮：两行布局
+                  Padding(
+  padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+  child: Column(
+    mainAxisSize: MainAxisSize.min, // ✅ 关键：按内容高度，不要撑满
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _isFirst ? null : () => _goPrev(context),
+              child: const Text('上一个'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _isLast ? null : () => _goNextSkip(context),
+              child: const Text('下一个（跳过）'),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () => _saveAndNext(context),
+          child: Text(_isLast ? '保存并返回' : '保存并下一个'),
+        ),
+      ),
+    ],
+  ),
+),
                   ],
                 ),
               );
@@ -325,12 +333,13 @@ class _Header extends StatelessWidget {
           Expanded(
             child: Text(
               name,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 8),
-          Text(type),
+          Text(type,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),),
         ],
       ),
     );
@@ -354,8 +363,13 @@ class _Keypad extends StatelessWidget {
       return Expanded(
         flex: flex,
         child: Padding(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(4),
           child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+          // ✅ 关键：设置最小高度为很大，迫使它填满父容器（Expanded）
+          minimumSize: const Size.fromHeight(double.infinity), 
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
             onPressed: onTap,
             child: Text(text, style: const TextStyle(fontSize: 22)),
           ),
@@ -367,10 +381,33 @@ class _Keypad extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Column(
         children: [
-          Row(children: [key('1', onTap: () => onDigit('1')), key('2', onTap: () => onDigit('2')), key('3', onTap: () => onDigit('3'))]),
-          Row(children: [key('4', onTap: () => onDigit('4')), key('5', onTap: () => onDigit('5')), key('6', onTap: () => onDigit('6'))]),
-          Row(children: [key('7', onTap: () => onDigit('7')), key('8', onTap: () => onDigit('8')), key('9', onTap: () => onDigit('9'))]),
-          Row(children: [key('清', onTap: onClear), key('0', onTap: () => onDigit('0')), key('←', onTap: onBackspace)]),
+            Expanded(
+            child: Row(children: [
+              key('1', onTap: () => onDigit('1')),
+              key('2', onTap: () => onDigit('2')),
+              key('3', onTap: () => onDigit('3')),
+            ]),
+          ),
+          Expanded(
+            child: Row(children: [
+              key('4', onTap: () => onDigit('4')),
+              key('5', onTap: () => onDigit('5')),
+              key('6', onTap: () => onDigit('6')),
+            ]),
+          ),
+          Expanded(
+            child: Row(children: [
+              key('7', onTap: () => onDigit('7')),
+              key('8', onTap: () => onDigit('8')),
+              key('9', onTap: () => onDigit('9')),
+            ]),
+          ),
+          Expanded(
+            child: Row(children: [
+              key('清', onTap: onClear),
+              key('0', onTap: () => onDigit('0')),
+              key('←', onTap: onBackspace),
+            ]), ),
         ],
       ),
     );
