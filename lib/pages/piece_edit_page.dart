@@ -327,22 +327,19 @@ class _Header extends StatelessWidget {
     final type = worker?.type.label ?? '-';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        children: [
-          Expanded(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+          alignment: Alignment.centerLeft,
+          width: double.infinity,
             child: Text(
               name,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+              style: TextStyle(fontSize: 40, 
+                  color: Colors.red.shade900,
+                  fontWeight: FontWeight.w900,),
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 8),
-          Text(type,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),),
-        ],
-      ),
-    );
+      );
   }
 }
 
