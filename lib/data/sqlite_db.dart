@@ -1,7 +1,9 @@
 // lib/data/sqlite_db.dart
+import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
+import 'package:path_provider/path_provider.dart';
 
 class SqliteDb {
   SqliteDb._();
