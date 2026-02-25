@@ -7,6 +7,7 @@ import '../models/date_key.dart';
 import '../models/worker_type.dart';
 
 import 'worker_manage_page.dart';
+import 'day_overview_page.dart';
 
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key});
@@ -175,6 +176,21 @@ appBar: AppBar(
         },
         child: const Text('Export 自检'),
       ),
+
+        const SizedBox(height: 16),
+
+ElevatedButton(
+  onPressed: () {
+    final key = DateKey.fromDate(DateTime.now());
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => DayOverviewPage(dateKey: key),
+      ),
+    );
+  },
+  child: const Text('打开今天概览'),
+),
+
     ],
   ),
 ),
