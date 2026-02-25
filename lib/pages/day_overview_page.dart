@@ -43,11 +43,13 @@ class DayOverviewPage extends ConsumerWidget {
           ];
 
           // 合计：仅统计 display 集合（和 UI 展示一致）
-          final total = display.fold<int>(
-            0,
-            (sum, w) => sum + (countsMap[w.id] ?? 0),
-          );
+final sewingTotal = display
+    .where((w) => w.type == WorkerType.sewing)
+    .fold<int>(0, (sum, w) => sum + (countsMap[w.id] ?? 0));
 
+final ironingTotal = display
+    .where((w) => w.type == WorkerType.ironing)
+    .fold<int>(0, (sum, w) => sum + (countsMap[w.id] ?? 0));
           // 按工种分组（制衣/熨衣）
           final sewing =
               display.where((w) => w.type == WorkerType.sewing).toList();
@@ -89,7 +91,9 @@ class DayOverviewPage extends ConsumerWidget {
               // 底部合计栏
               Align(
                 alignment: Alignment.bottomCenter,
-                child: _TotalBar(total: total),
+                child: _TotalBar(
+                    sewingTotal: sewingTotal,
+                    ironingTotal: ironingTotal),
               ),
             ],
           );
@@ -251,11 +255,14 @@ class _Section extends StatelessWidget {
 }
 
 //--------------
-
 class _TotalBar extends StatelessWidget {
-  const _TotalBar({required this.total});
+  const _TotalBar({
+    required this.sewingTotal,
+    required this.ironingTotal,
+  });
 
-  final int total;
+  final int sewingTotal;
+  final int ironingTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -268,19 +275,48 @@ class _TotalBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              const Expanded(
-                child: Text(
-                  '合计',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-              Text(
-                '$total',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-              ),
+              Expanded(child: _TotalChip(label: '制衣合计', value: sewingTotal)),
+              const SizedBox(width: 12),
+              Expanded(child: _TotalChip(label: '熨衣合计', value: ironingTotal)),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TotalChip extends StatelessWidget {
+  const _TotalChip({required this.label, required this.value});
+
+  final String label;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: primary.withOpacity(0.06),
+        border: Border.all(color: primary.withOpacity(0.18), width: 0.8),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+          Text(
+            '$value',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          ),
+        ],
       ),
     );
   }
