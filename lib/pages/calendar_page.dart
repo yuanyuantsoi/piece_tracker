@@ -221,15 +221,77 @@ eventLoader: (day) {
             },
           ),
 
-          daysOfWeekHeight: 22,
-          rowHeight: 44,
+          daysOfWeekHeight: 32,
+          rowHeight: 60,
+          //----------------
+
           calendarStyle: CalendarStyle(
-            outsideDaysVisible: false,
-            markersMaxCount: 1,
-            markerDecoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                shape: BoxShape.circle, ), 
-          ),
+                  cellMargin: const EdgeInsets.all(4),
+  outsideDaysVisible: false,
+
+  // 所有日期：极淡底色（iOS 克制）
+  defaultDecoration: BoxDecoration(
+     // color: const Color(0xFF007AFF).withOpacity(0.06),
+      color: const Color(0xFFEFF4FF),
+    borderRadius: BorderRadius.circular(14),
+  ),
+
+  // 周末：同底色，但文字略变（见 weekendTextStyle）
+  weekendDecoration: BoxDecoration(
+    //color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+      color: const Color(0xFFEFF4FF),
+    borderRadius: BorderRadius.circular(14),
+  ),
+
+  // 今天：描边 + 更淡底色
+  todayDecoration: BoxDecoration(
+    color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.15),
+    borderRadius: BorderRadius.circular(14),
+    border: Border.all(
+      color: Theme.of(context).colorScheme.primary.withOpacity(0.55),
+      width: 1.2,
+    ),
+  ),
+
+  // 选中：实心主色（iOS 选中感）
+  selectedDecoration: BoxDecoration(
+    color: Theme.of(context).colorScheme.primary,
+    borderRadius: BorderRadius.circular(14),
+  ),
+
+  // 字体（iOS 更轻）
+
+  defaultTextStyle: TextStyle(
+    fontWeight: FontWeight.w600,
+    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.90),
+    fontSize: 20,
+  ),
+  weekendTextStyle: TextStyle(
+    fontWeight: FontWeight.w600,
+    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75),
+    fontSize: 20,
+  ),
+  todayTextStyle: TextStyle(
+    fontWeight: FontWeight.w700,
+    color: Theme.of(context).colorScheme.primary,
+    fontSize: 20,
+  ),
+  selectedTextStyle: TextStyle(
+    fontWeight: FontWeight.w800,
+    color: Theme.of(context).colorScheme.onPrimary,
+    fontSize: 20,
+  ),
+  // 标记点：更小、更 iOS
+  markersMaxCount: 1,
+  markerSize: 6,
+  markerMargin: const EdgeInsets.only(top: 2),
+  markerDecoration: BoxDecoration(
+    color: Theme.of(context).colorScheme.primary.withOpacity(0.85),
+    shape: BoxShape.circle,
+  ),
+),
+
+          //------------------
 
           selectedDayPredicate: (d) =>
               _selectedDay != null && isSameDay(_selectedDay, d),
