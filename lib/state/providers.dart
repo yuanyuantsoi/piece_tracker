@@ -19,26 +19,17 @@ final dbProvider = FutureProvider<Database>((ref) async {
 
 /// repos / services
 final workerRepoProvider = Provider<WorkerRepo>((ref) {
-  final db = ref.watch(dbProvider).value;
-  if (db == null) {
-    throw StateError('db not ready');
-  }
+  final db = ref.watch(dbProvider).requireValue;
   return WorkerRepo(db);
 });
 
 final entryRepoProvider = Provider<EntryRepo>((ref) {
-  final db = ref.watch(dbProvider).value;
-  if (db == null) {
-    throw StateError('db not ready');
-  }
+  final db = ref.watch(dbProvider).requireValue;
   return EntryRepo(db);
 });
 
 final exportServiceProvider = Provider<ExportService>((ref) {
-  final db = ref.watch(dbProvider).value;
-  if (db == null) {
-    throw StateError('db not ready');
-  }
+  final db = ref.watch(dbProvider).requireValue;
   return ExportService(db);
 });
 
