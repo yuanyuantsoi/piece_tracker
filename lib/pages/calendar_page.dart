@@ -139,6 +139,7 @@ Future<void> _exportYear() async {
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: TableCalendar(
+            locale: 'zh_CN',
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2100, 12, 31),
           focusedDay: _focusedDay,

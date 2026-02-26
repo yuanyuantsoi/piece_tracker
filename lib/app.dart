@@ -1,6 +1,7 @@
 // lib/app.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'pages/calendar_page.dart';
 
 class App extends StatelessWidget {
@@ -11,6 +12,16 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: '计件助手',
       debugShowCheckedModeBanner: false,
+
+localizationsDelegates: const [
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ],
+  supportedLocales: const [
+    Locale('zh', 'CN'),
+  ],
+  locale: const Locale('zh', 'CN'),
 
          scrollBehavior: const ScrollBehavior().copyWith(
         overscroll: false, // 禁用 Android 12+ 的 Stretch 和旧版的 Glow
