@@ -15,7 +15,7 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.0  #路径处理
   flutter_riverpod: ^2.5.1  #状态管理
-  table_calendar: ^3.1.2
+  table_calendar: ^3.2.0
   flutter_localizations:
     sdk: flutter
 

@@ -8,6 +8,7 @@ import '../repos/worker_repo.dart';
 import '../repos/entry_repo.dart';
 import '../repos/export_service.dart';
 import '../models/worker_row.dart';
+import '../models/date_key.dart';
 
 import 'refresh_tick.dart';
 
@@ -61,4 +62,16 @@ final countsByDateProvider =
   ref.watch(refreshTickProvider);
   final repo = ref.watch(entryRepoProvider);
   return repo.getCountsByDate(dateKey);
+});
+
+
+/// 日历打点：当前月份范围内哪些 dateKey 有记录
+final markedDateKeysByMonthProvider =
+    FutureProvider.family<Set<int>, DateTime>((ref, DateTime focusedDay) async {
+  ref.watch(refreshTickProvider); // 写入 tick++ 后刷新
+
+  final repo = ref.watch(entryRepoProvider);
+  final range = DateKey.monthRange(focusedDay);
+
+  return repo.getMarkedDateKeysInRange(range.startKey, range.endKey);
 });

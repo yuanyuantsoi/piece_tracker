@@ -1,7 +1,5 @@
 // lib/pages/calendar_page.dart
 import 'package:share_plus/share_plus.dart';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -30,59 +28,40 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       MaterialPageRoute(builder: (_) => DayOverviewPage(dateKey: key)),
     );
   }
-//--------------------------------------------------------------------
-Future<void> _exportMonth() async {
-  final service = ref.read(exportServiceProvider);
-  final range = DateKey.monthRange(_focusedDay);
 
-  final path = await service.exportCsvToFile(
-    startKey: range.startKey,
-    endKey: range.endKey,
-    fileName: 'piece_month_${range.startKey}_${range.endKey}.csv',
-  );
+  Future<void> _exportMonth() async {
+    final service = ref.read(exportServiceProvider);
+    final range = DateKey.monthRange(_focusedDay);
 
-  if (!mounted) return;
+    final path = await service.exportCsvToFile(
+      startKey: range.startKey,
+      endKey: range.endKey,
+      fileName: 'piece_month_${range.startKey}_${range.endKey}.csv',
+    );
 
-  await Share.shareXFiles(
-    [XFile(path)],
-    text: '计件数据（本月）',
-  );
-}
-//----------------------------------------------------------------
-Future<void> _exportYear() async {
-  final service = ref.read(exportServiceProvider);
-  final range = DateKey.yearRange(_focusedDay.year);
+    if (!mounted) return;
 
-  final path = await service.exportCsvToFile(
-    startKey: range.startKey,
-    endKey: range.endKey,
-    fileName: 'piece_year_${range.startKey}_${range.endKey}.csv',
-  );
+    await Share.shareXFiles(
+      [XFile(path)],
+      text: '计件数据（本月）',
+    );
+  }
 
-  if (!mounted) return;
+  Future<void> _exportYear() async {
+    final service = ref.read(exportServiceProvider);
+    final range = DateKey.yearRange(_focusedDay.year);
 
-  await Share.shareXFiles(
-    [XFile(path)],
-    text: '计件数据（本年）',
-  );
-}
-//----------------------------------------------------------
-  void _showTextDialog(String title, String content) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(title),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(child: Text(content)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
+    final path = await service.exportCsvToFile(
+      startKey: range.startKey,
+      endKey: range.endKey,
+      fileName: 'piece_year_${range.startKey}_${range.endKey}.csv',
+    );
+
+    if (!mounted) return;
+
+    await Share.shareXFiles(
+      [XFile(path)],
+      text: '计件数据（本年）',
     );
   }
 
@@ -93,22 +72,16 @@ Future<void> _exportYear() async {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('计件助手'
-           // style: TextStyle(
-           //     fontSize: 12,
-           //     fontWeight: FontWeight.w900,
-           //     fontStyle: FontStyle.normal,
-           //     ),
-            ),
+        title: const Text('计件助手'),
         actions: [
           IconButton(
             icon: const Icon(Icons.people),
+            tooltip: '工人管理',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const WorkerManagePage()),
               );
             },
-            tooltip: '工人管理',
           ),
           PopupMenuButton<_ExportAction>(
             tooltip: '导出',
@@ -139,39 +112,107 @@ Future<void> _exportYear() async {
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: TableCalendar(
-            locale: 'zh_CN',
-// ✅ 关键：把头部和星期行“撑开”
-  headerStyle: const HeaderStyle(
-    formatButtonVisible: false,
-    titleCentered: true,
-    headerPadding: EdgeInsets.symmetric(vertical: 10), // 原来太薄就会挡字
-    titleTextStyle: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w800,
-      height: 1.2,
-    ),
-    leftChevronPadding: EdgeInsets.all(8),
-    rightChevronPadding: EdgeInsets.all(8),
-  ),
-
-  daysOfWeekHeight: 22, // ✅ 星期一/二/三这一行的高度
-  rowHeight: 44,        // ✅ 每个日期格子高度（你觉得挤就加大）
-  calendarStyle: const CalendarStyle(
-    outsideDaysVisible: false,
-  ),
-
+          locale: 'zh_CN',
 
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2100, 12, 31),
           focusedDay: _focusedDay,
 
-            calendarFormat: CalendarFormat.month,
-availableCalendarFormats: const {
-  CalendarFormat.month: '月',
-},
-//headerStyle: const HeaderStyle(
-//  formatButtonVisible: false,
-//),
+          calendarFormat: CalendarFormat.month,
+          availableCalendarFormats: const {
+            CalendarFormat.month: '月',
+          },
+
+          headerStyle: const HeaderStyle(
+            formatButtonVisible: false,
+            titleCentered: true,
+            headerPadding: EdgeInsets.symmetric(vertical: 10),
+            titleTextStyle: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+            ),
+            leftChevronPadding: EdgeInsets.all(8),
+            rightChevronPadding: EdgeInsets.all(8),
+          ),
+
+          calendarBuilders: CalendarBuilders(
+            headerTitleBuilder: (context, day) {
+              final t = DateTime.now();
+              final today = DateTime(t.year, t.month, t.day);
+
+              return SizedBox(
+                height: 36,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Text(
+                      '${day.year}年${day.month}月',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _focusedDay = today;
+                              _selectedDay = today;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withOpacity(0.35),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.today, size: 14),
+                                SizedBox(width: 4),
+                                Text(
+                                  '今天',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          daysOfWeekHeight: 22,
+          rowHeight: 44,
+          calendarStyle: const CalendarStyle(
+            outsideDaysVisible: false,
+          ),
 
           selectedDayPredicate: (d) =>
               _selectedDay != null && isSameDay(_selectedDay, d),
@@ -185,9 +226,6 @@ availableCalendarFormats: const {
           onPageChanged: (focusedDay) {
             setState(() => _focusedDay = _normalize(focusedDay));
           },
-          //calendarStyle: const CalendarStyle(
-          //  outsideDaysVisible: false,
-          //),
         ),
       ),
     );
