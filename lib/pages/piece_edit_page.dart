@@ -55,33 +55,35 @@ class _PieceEditPageState extends ConsumerState<PieceEditPage> {
   bool get _isFirst => _index == 0;
   bool get _isLast => _index == widget.orderedWorkerIds.length - 1;
 
-  @override
+@override
   Widget build(BuildContext context) {
     final allWorkersAsync = ref.watch(allWorkersProvider);
     final countsAsync = ref.watch(countsByDateProvider(widget.dateKey));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.dateKey} 录入'),
-      ),
-      body: allWorkersAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('错误: $e')),
-        data: (allWorkers) {
-          final byId = {for (final w in allWorkers) w.id: w};
+    // 第一步：先等工人列表加载出来，为了在顶部蓝条显示名字
+    return allWorkersAsync.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) => Scaffold(body: Center(child: Text('加载工人失败: $e'))),
+      data: (allWorkers) {
+        final byId = {for (final w in allWorkers) w.id: w};
+        final worker = byId[_currentWorkerId];
+        // ✅ 这是你要的：把名字放在顶部
+        final headerName = worker?.name ?? '工人#$_currentWorkerId';
 
-          return countsAsync.when(
+        return Scaffold(
+          appBar: AppBar(
+            // 这里显示人名，24号大字
+            title: Text(headerName, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24)),
+          ),
+          // 第二步：加载该工人当天的具体数值
+          body: countsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('错误: $e')),
+            error: (e, _) => Center(child: Text('加载数值失败: $e')),
             data: (countsMap) {
-              final workerId = _currentWorkerId;
-              final worker = byId[workerId];
-
-              final currentValue = countsMap[workerId] ?? 0;
-
-              // 当切换到新 worker 时，把 input 初始化为 DB 当前值
-              if (_inputBoundWorkerId != workerId) {
-                _inputBoundWorkerId = workerId;
+              // 自动同步数据库里的值到输入框
+              if (_inputBoundWorkerId != _currentWorkerId) {
+                final currentValue = countsMap[_currentWorkerId] ?? 0;
+                _inputBoundWorkerId = _currentWorkerId;
                 _loadedValue = currentValue;
                 _input = currentValue == 0 ? '' : currentValue.toString();
               }
@@ -95,33 +97,38 @@ class _PieceEditPageState extends ConsumerState<PieceEditPage> {
                 },
                 child: Column(
                   children: [
-                    const SizedBox(height: 16),
-
-                    _Header(worker: worker, workerId: workerId),
-
-                    const SizedBox(height: 12),
-
-                    Text(
-                      _input.isEmpty ? '0' : _input,
-                      style: const TextStyle(
-                        fontSize: 44,
-                        fontWeight: FontWeight.w700,
+                    const SizedBox(height: 20),
+                    
+                    // ✅ 中间：巨大的数字显示框
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.all(20),
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.shade200, width: 2),
+                      ),
+                      child: Text(
+                        _input.isEmpty ? '0' : _input,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 70, // 字体超级大，方便看清
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
                       ),
                     ),
 
-                    const SizedBox(height: 12),
-
+                    // 未保存的小圆点提示
                     if (_isDirty)
-                      const Text(
-                        '未保存',
-                        style: TextStyle(fontSize: 12),
+                       Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text('● 修改尚未保存', style: TextStyle(color: Colors.red.shade900, fontSize: 14)),
                       ),
 
-                    const SizedBox(height: 12),
-
-                        // ✅ 键盘占据中间剩余空间（更大）
+                    // ✅ 键盘区域：占据中间所有位置
                     Expanded(
-                           // flex: 20, //键盘高度权重
                       child: _Keypad(
                         onDigit: _append,
                         onClear: _clear,
@@ -129,11 +136,13 @@ class _PieceEditPageState extends ConsumerState<PieceEditPage> {
                       ),
                     ),
 
-                    // ✅ 底部按钮：两行布局
-                  Padding(
+                    // ✅ 底部按钮：切换和保存
+                  // ✅ 底部按钮区域修改：将“保存并下一个”改为“保存当前”
+// ✅ 纯净版底部按钮：点击保存，红字消失，不弹任何提示
+Padding(
   padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
   child: Column(
-    mainAxisSize: MainAxisSize.min, // ✅ 关键：按内容高度，不要撑满
+    mainAxisSize: MainAxisSize.min,
     children: [
       Row(
         children: [
@@ -147,7 +156,7 @@ class _PieceEditPageState extends ConsumerState<PieceEditPage> {
           Expanded(
             child: ElevatedButton(
               onPressed: _isLast ? null : () => _goNextSkip(context),
-              child: const Text('下一个（跳过）'),
+              child: const Text('下一个'), 
             ),
           ),
         ],
@@ -156,8 +165,16 @@ class _PieceEditPageState extends ConsumerState<PieceEditPage> {
       SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () => _saveAndNext(context),
-          child: Text(_isLast ? '保存并返回' : '保存并下一个'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade600,
+            foregroundColor: Colors.white,
+          ),
+          // ✅ 直接调用保存方法，保存后 _isDirty 会变回 false，界面上的提示自然消失
+          onPressed: () => _saveOnly(), 
+          child: const Text(
+            '保存当前数值', 
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+          ),
         ),
       ),
     ],
@@ -167,9 +184,9 @@ class _PieceEditPageState extends ConsumerState<PieceEditPage> {
                 ),
               );
             },
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -326,7 +343,9 @@ class _Header extends StatelessWidget {
     final name = worker?.name ?? 'Worker#$workerId';
     final type = worker?.type.label ?? '-';
 
-    return Padding(
+    return 
+        Padding(
+
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
           alignment: Alignment.centerLeft,
