@@ -70,6 +70,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     // 提前触发 DB 打开：避免第一次点导出/进页面时卡住（仍不写业务逻辑）
     ref.watch(dbProvider);
 
+    final markedKeysAsync =
+    ref.watch(markedDateKeysByMonthProvider(_focusedDay));
+final markedKeys = markedKeysAsync.value ?? <int>{};
     return Scaffold(
       appBar: AppBar(
         title: const Text('计件助手'),
@@ -112,7 +115,17 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       body: Padding(
         padding: const EdgeInsets.all(12),
         child: TableCalendar(
+
           locale: 'zh_CN',
+
+          
+eventLoader: (day) {
+  final key = DateKey.fromDate(day);
+  return markedKeys.contains(key) ? [1] : const [];
+},
+
+
+
 
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2100, 12, 31),
@@ -210,8 +223,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
           daysOfWeekHeight: 22,
           rowHeight: 44,
-          calendarStyle: const CalendarStyle(
+          calendarStyle: CalendarStyle(
             outsideDaysVisible: false,
+            markersMaxCount: 1,
+            markerDecoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle, ), 
           ),
 
           selectedDayPredicate: (d) =>

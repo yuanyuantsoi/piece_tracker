@@ -49,4 +49,21 @@ ON CONFLICT(date_key, worker_id) DO UPDATE SET
       [dateKey, workerId, count],
     );
   }
+
+Future<Set<int>> getMarkedDateKeysInRange(int startKey, int endKey) async {
+  final rows = await db.rawQuery(
+    '''
+SELECT DISTINCT date_key
+FROM piece_entries
+WHERE date_key BETWEEN ? AND ?
+''',
+    [startKey, endKey],
+  );
+
+  return rows.map((r) => r['date_key'] as int).toSet();
+}
+
+
+
+
 }
