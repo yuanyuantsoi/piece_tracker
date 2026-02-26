@@ -140,17 +140,38 @@ Future<void> _exportYear() async {
         padding: const EdgeInsets.all(12),
         child: TableCalendar(
             locale: 'zh_CN',
+// ✅ 关键：把头部和星期行“撑开”
+  headerStyle: const HeaderStyle(
+    formatButtonVisible: false,
+    titleCentered: true,
+    headerPadding: EdgeInsets.symmetric(vertical: 10), // 原来太薄就会挡字
+    titleTextStyle: TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w800,
+      height: 1.2,
+    ),
+    leftChevronPadding: EdgeInsets.all(8),
+    rightChevronPadding: EdgeInsets.all(8),
+  ),
+
+  daysOfWeekHeight: 22, // ✅ 星期一/二/三这一行的高度
+  rowHeight: 44,        // ✅ 每个日期格子高度（你觉得挤就加大）
+  calendarStyle: const CalendarStyle(
+    outsideDaysVisible: false,
+  ),
+
+
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2100, 12, 31),
           focusedDay: _focusedDay,
 
             calendarFormat: CalendarFormat.month,
 availableCalendarFormats: const {
-  CalendarFormat.month: 'Month',
+  CalendarFormat.month: '月',
 },
-headerStyle: const HeaderStyle(
-  formatButtonVisible: false,
-),
+//headerStyle: const HeaderStyle(
+//  formatButtonVisible: false,
+//),
 
           selectedDayPredicate: (d) =>
               _selectedDay != null && isSameDay(_selectedDay, d),
@@ -164,9 +185,9 @@ headerStyle: const HeaderStyle(
           onPageChanged: (focusedDay) {
             setState(() => _focusedDay = _normalize(focusedDay));
           },
-          calendarStyle: const CalendarStyle(
-            outsideDaysVisible: false,
-          ),
+          //calendarStyle: const CalendarStyle(
+          //  outsideDaysVisible: false,
+          //),
         ),
       ),
     );
